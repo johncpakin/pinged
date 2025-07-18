@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
-import { User } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase'
 import { 
   Gamepad2, 
   User as UserIcon, 
@@ -14,6 +13,12 @@ import {
   Plus,
   X
 } from 'lucide-react'
+
+interface UserData {
+  id: string
+  email?: string
+  user_metadata?: any
+}
 
 interface UserProfile {
   display_name: string
@@ -60,12 +65,12 @@ const REGIONS = [
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 export default function OnboardingPage() {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   // Form data
   const [profile, setProfile] = useState<UserProfile>({

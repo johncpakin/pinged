@@ -1,7 +1,9 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import type { Database } from '@/lib/supabase'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
@@ -9,8 +11,10 @@ export async function GET(request: Request) {
 
   if (code) {
     const cookieStore = cookies()
-    const supabase = createRouteHandlerClient<Database>({ 
-      cookies: () => cookieStore 
+    const supabase = createRouteHandlerClient({ 
+      cookies: () => cookieStore,
+      supabaseUrl,
+      supabaseKey: supabaseAnonKey
     })
     
     try {

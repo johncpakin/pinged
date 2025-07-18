@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
-import { User } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase'
 import { 
   Search, 
   Users, 
@@ -28,6 +27,11 @@ interface UserProfile {
   bio?: string
   region?: string
   timezone?: string
+}
+
+interface UserData {
+  id: string
+  email?: string
 }
 
 interface Post {
@@ -57,7 +61,7 @@ interface AvailabilitySlot {
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export default function HomePage() {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<UserData | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
   const [userGames, setUserGames] = useState<UserGame[]>([])
@@ -69,7 +73,7 @@ export default function HomePage() {
   const [activeFilter, setActiveFilter] = useState('all')
   
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   useEffect(() => {
     const getUser = async () => {

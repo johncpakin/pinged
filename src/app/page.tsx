@@ -1,16 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
-import { User } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase'
 import { Gamepad2, Users, Calendar, Search, ArrowRight, Mail } from 'lucide-react'
 
 export default function LandingPage() {
   const [loading, setLoading] = useState(true)
   const [authLoading, setAuthLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   useEffect(() => {
     const getUser = async () => {
