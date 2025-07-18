@@ -8,7 +8,6 @@ import {
   Search, 
   Users, 
   Calendar, 
-  Plus,
   Heart,
   MessageCircle,
   Share,
@@ -17,7 +16,6 @@ import {
   Bell,
   Settings,
   LogOut,
-  Filter,
   TrendingUp,
   UserPlus,
   Play
@@ -87,7 +85,7 @@ export default function HomePage() {
     }
 
     getUser()
-  }, [supabase.auth, router])
+  }, [supabase.auth, router]) // Removed loadUserData and loadPosts from deps to avoid infinite loop
 
   const loadUserData = async (userId: string) => {
     try {

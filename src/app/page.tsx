@@ -7,7 +7,6 @@ import { User } from '@supabase/auth-helpers-nextjs'
 import { Gamepad2, Users, Calendar, Search, ArrowRight, Mail } from 'lucide-react'
 
 export default function LandingPage() {
-  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [authLoading, setAuthLoading] = useState(false)
   const router = useRouter()
@@ -16,7 +15,6 @@ export default function LandingPage() {
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
       setLoading(false)
       
       // If user is already logged in, redirect to home or onboarding
@@ -41,16 +39,13 @@ export default function LandingPage() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (event === 'SIGNED_IN' && session) {
-          setUser(session.user)
           router.push('/onboarding')
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null)
         }
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [supabase.auth, router])
+  }, [router]) // Removed supabase from deps
 
   const handleGoogleLogin = async () => {
     setAuthLoading(true)

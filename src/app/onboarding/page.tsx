@@ -12,9 +12,7 @@ import {
   ArrowRight, 
   ArrowLeft,
   Plus,
-  X,
-  Globe,
-  Clock
+  X
 } from 'lucide-react'
 
 interface UserProfile {
@@ -263,7 +261,7 @@ export default function OnboardingPage() {
                     value={profile.bio}
                     onChange={(e) => handleProfileUpdate('bio', e.target.value)}
                     className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Tell people about your gaming style and what you're looking for..."
+                    placeholder="Tell people about your gaming style and what you&apos;re looking for..."
                     rows={4}
                   />
                 </div>
@@ -442,7 +440,7 @@ export default function OnboardingPage() {
               </div>
 
               <p className="text-gray-400 mb-6">
-                Set your typical gaming hours so others can find you when you're available.
+                Set your typical gaming hours so others can find you when you&apos;re available.
               </p>
 
               {/* Availability Slots */}
