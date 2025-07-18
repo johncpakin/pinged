@@ -1,6 +1,4 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
 
 // Environment variables with fallbacks for build time
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
@@ -8,14 +6,6 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholde
 
 export const createClient = () => {
   return createClientComponentClient({
-    supabaseUrl,
-    supabaseKey: supabaseAnonKey
-  })
-}
-
-export const createServerClient = () => {
-  return createServerComponentClient({ 
-    cookies,
     supabaseUrl,
     supabaseKey: supabaseAnonKey
   })

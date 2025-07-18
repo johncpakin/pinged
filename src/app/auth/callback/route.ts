@@ -2,9 +2,6 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
-
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
@@ -12,9 +9,7 @@ export async function GET(request: Request) {
   if (code) {
     const cookieStore = cookies()
     const supabase = createRouteHandlerClient({ 
-      cookies: () => cookieStore,
-      supabaseUrl,
-      supabaseKey: supabaseAnonKey
+      cookies: () => cookieStore
     })
     
     try {
