@@ -22,6 +22,7 @@ interface UserData {
 
 interface UserProfile {
   display_name: string
+  username: string
   bio: string
   region: string
   timezone: string
@@ -75,6 +76,7 @@ export default function OnboardingPage() {
   // Form data
   const [profile, setProfile] = useState<UserProfile>({
     display_name: '',
+    username: '',
     bio: '',
     region: '',
     timezone: ''
@@ -85,6 +87,8 @@ export default function OnboardingPage() {
   // UI state
   const [newGame, setNewGame] = useState({ game_name: '', platform: '', rank: '', tags: [] as string[] })
   const [showGameForm, setShowGameForm] = useState(false)
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle')
+  const [usernameCheckTimeout, setUsernameCheckTimeout] = useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const getUser = async () => {
@@ -96,10 +100,16 @@ export default function OnboardingPage() {
       setUser(user)
       
       // Pre-fill display name from auth metadata if available
-      if (user.user_metadata?.full_name && !profile.display_name) {
+      const userName = user.user_metadata?.full_name || 
+                      user.user_metadata?.name || 
+                      user.user_metadata?.display_name ||
+                      user.email?.split('@')[0] || 
+                      ''
+      
+      if (userName && !profile.display_name) {
         setProfile(prev => ({
           ...prev,
-          display_name: user.user_metadata.full_name || user.email?.split('@')[0] || ''
+          display_name: userName
         }))
       }
       
@@ -111,6 +121,60 @@ export default function OnboardingPage() {
 
   const handleProfileUpdate = (field: keyof UserProfile, value: string) => {
     setProfile(prev => ({ ...prev, [field]: value }))
+    
+    // Special handling for username
+    if (field === 'username') {
+      const cleanUsername = value.toLowerCase().replace(/[^a-z0-9_]/g, '')
+      setProfile(prev => ({ ...prev, username: cleanUsername }))
+      
+      // Clear existing timeout
+      if (usernameCheckTimeout) {
+        clearTimeout(usernameCheckTimeout)
+      }
+      
+      // Validate format first
+      if (cleanUsername.length === 0) {
+        setUsernameStatus('idle')
+        return
+      }
+      
+      if (cleanUsername.length < 3 || cleanUsername.length > 20) {
+        setUsernameStatus('invalid')
+        return
+      }
+      
+      // Set checking status and debounce the API call
+      setUsernameStatus('checking')
+      const timeout = setTimeout(() => {
+        checkUsernameAvailability(cleanUsername)
+      }, 500)
+      
+      setUsernameCheckTimeout(timeout)
+    }
+  }
+
+  const checkUsernameAvailability = async (username: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('username')
+        .eq('username', username)
+        .single()
+      
+      if (error && error.code === 'PGRST116') {
+        // No rows returned - username is available
+        setUsernameStatus('available')
+      } else if (data) {
+        // Username exists - taken
+        setUsernameStatus('taken')
+      } else {
+        // Other error
+        setUsernameStatus('invalid')
+      }
+    } catch (error) {
+      console.error('Error checking username:', error)
+      setUsernameStatus('invalid')
+    }
   }
 
   const addGame = () => {
@@ -163,6 +227,7 @@ export default function OnboardingPage() {
         .upsert({
           id: user.id,
           display_name: profile.display_name,
+          username: profile.username,
           bio: profile.bio,
           region: profile.region,
           timezone: profile.timezone,
@@ -217,7 +282,7 @@ export default function OnboardingPage() {
             </div>
           </div>
           <h1 className="text-3xl font-bold mb-2">Welcome to <span className="text-blue-400">Pinged.gg</span></h1>
-          <p className="text-gray-400">Let's set up your gaming profile</p>
+          <p className="text-gray-400">Let&apos;s set up your gaming profile</p>
         </div>
 
         {/* Progress Bar */}
@@ -258,6 +323,55 @@ export default function OnboardingPage() {
                     className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Your gamer name"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Username *</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-400 text-sm">@</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={profile.username}
+                      onChange={(e) => handleProfileUpdate('username', e.target.value)}
+                      className={`w-full pl-8 pr-10 py-3 bg-gray-700 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        usernameStatus === 'available' ? 'border-green-500' :
+                        usernameStatus === 'taken' || usernameStatus === 'invalid' ? 'border-red-500' :
+                        'border-gray-600'
+                      }`}
+                      placeholder="your_username"
+                      maxLength={20}
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                      {usernameStatus === 'checking' && (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                      )}
+                      {usernameStatus === 'available' && (
+                        <Check className="h-5 w-5 text-green-500" />
+                      )}
+                      {(usernameStatus === 'taken' || usernameStatus === 'invalid') && (
+                        <X className="h-5 w-5 text-red-500" />
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-1 text-sm">
+                    {usernameStatus === 'checking' && (
+                      <span className="text-blue-400">Checking availability...</span>
+                    )}
+                    {usernameStatus === 'available' && (
+                      <span className="text-green-400">✓ Username is available</span>
+                    )}
+                    {usernameStatus === 'taken' && (
+                      <span className="text-red-400">✗ Username is already taken</span>
+                    )}
+                    {usernameStatus === 'invalid' && (
+                      <span className="text-red-400">✗ Username must be 3-20 characters (letters, numbers, underscores)</span>
+                    )}
+                    {usernameStatus === 'idle' && (
+                      <span className="text-gray-400">Your profile will be available at pinged.gg/@{profile.username || 'username'}</span>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -514,7 +628,7 @@ export default function OnboardingPage() {
             {step < 3 ? (
               <button
                 onClick={() => setStep(step + 1)}
-                disabled={step === 1 && !profile.display_name}
+                disabled={step === 1 && (!profile.display_name || !profile.username || usernameStatus !== 'available')}
                 className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next
@@ -523,7 +637,7 @@ export default function OnboardingPage() {
             ) : (
               <button
                 onClick={handleFinish}
-                disabled={saving || !profile.display_name}
+                disabled={saving || !profile.display_name || !profile.username || usernameStatus !== 'available'}
                 className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? 'Saving...' : 'Complete Setup'}
