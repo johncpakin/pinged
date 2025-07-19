@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase'
 import { Gamepad2, Users, Calendar, Search, ArrowRight, Mail, Zap, Trophy, Target, Shield } from 'lucide-react'
 
 export default function LandingPage() {
@@ -11,6 +13,43 @@ export default function LandingPage() {
   const [isClient, setIsClient] = useState(false)
   const heroRef = useRef(null)
   const featuresRef = useRef(null)
+  const router = useRouter()
+  const supabase = createClient()
+
+useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setLoading(false)
+      
+      // If user is already logged in, redirect to home or onboarding
+      if (user) {
+        // Check if user has completed onboarding by checking if they have a profile
+        const { data: profile } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+        
+        if (profile && profile.display_name) {
+          router.push('/home')
+        } else {
+          router.push('/onboarding')
+        }
+      }
+    }
+
+    getUser()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          router.push('/onboarding')
+        }
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [router])
 
   useEffect(() => {
     setIsClient(true)
@@ -46,15 +85,25 @@ export default function LandingPage() {
       observer.disconnect()
     }
   }, [])
-
-  const handleGoogleLogin = async () => {
+  
+const handleGoogleLogin = async () => {
     setAuthLoading(true)
-    // Simulate auth process
-    setTimeout(() => setAuthLoading(false), 2000)
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      })
+      if (error) throw error
+    } catch (error) {
+      console.error('Error during Google login:', error)
+      setAuthLoading(false)
+    }
   }
 
   const handleEmailSignup = () => {
-    console.log('Email signup clicked')
+    router.push('/auth/signup')
   }
 
   if (loading) {
