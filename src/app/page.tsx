@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase'
 import { Gamepad2, Users, Calendar, Search, ArrowRight, Mail, Zap, Trophy, Target, Shield } from 'lucide-react'
 
 export default function LandingPage() {
@@ -13,42 +14,49 @@ export default function LandingPage() {
   const heroRef = useRef(null)
   const featuresRef = useRef(null)
   const router = useRouter()
+  const supabase = createClient()
 
   useEffect(() => {
     const getUser = async () => {
-      // Mock auth check - replace with your actual Supabase logic
+      const { data: { user } } = await supabase.auth.getUser()
       setLoading(false)
       
       // If user is already logged in, redirect to home or onboarding
-      // const { data: { user } } = await supabase.auth.getUser()
-      // if (user) {
-      //   // Check if user has completed onboarding
-      //   const { data: profile } = await supabase
-      //     .from('users')
-      //     .select('*')
-      //     .eq('id', user.id)
-      //     .single()
-      //   
-      //   if (profile && profile.display_name) {
-      //     router.push('/home')
-      //   } else {
-      //     router.push('/onboarding')
-      //   }
-      // }
+      if (user) {
+        try {
+          // Check if user has completed onboarding by checking if they have a profile
+          const { data: profile, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user.id)
+            .single()
+          
+          // If profile exists and has display_name, user completed onboarding
+          if (profile && profile.display_name) {
+            router.push('/home')
+          } else {
+            // If no profile exists or incomplete profile, go to onboarding
+            router.push('/onboarding')
+          }
+        } catch (error) {
+          // If there's an error (like profile doesn't exist), redirect to onboarding
+          console.log('No profile found, redirecting to onboarding')
+          router.push('/onboarding')
+        }
+      }
     }
 
     getUser()
 
-    // Mock auth state change listener
-    // const { data: { subscription } } = supabase.auth.onAuthStateChange(
-    //   (event, session) => {
-    //     if (event === 'SIGNED_IN' && session) {
-    //       router.push('/onboarding')
-    //     }
-    //   }
-    // )
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          router.push('/onboarding')
+        }
+      }
+    )
 
-    // return () => subscription.unsubscribe()
+    return () => subscription.unsubscribe()
   }, [router])
 
   useEffect(() => {
@@ -89,16 +97,13 @@ export default function LandingPage() {
   const handleGoogleLogin = async () => {
     setAuthLoading(true)
     try {
-      // Replace with your actual Supabase auth logic
-      // const { error } = await supabase.auth.signInWithOAuth({
-      //   provider: 'google',
-      //   options: {
-      //     redirectTo: `${window.location.origin}/auth/callback`
-      //   }
-      // })
-      // if (error) throw error
-      console.log('Google login clicked')
-      setTimeout(() => setAuthLoading(false), 2000) // Mock delay
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      })
+      if (error) throw error
     } catch (error) {
       console.error('Error during Google login:', error)
       setAuthLoading(false)
