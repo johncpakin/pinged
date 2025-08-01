@@ -23,6 +23,11 @@ import {
   Target,
   Trophy
 } from 'lucide-react'
+import ClipsCarousel from '@/components/ui/ClipsCarousel'
+import { isYouTubeUrl, extractYouTubeVideoId, isYouTubeShorts } from '@/lib/youtube'
+import YouTubeEmbed from '@/components/ui/YouTubeEmbed'
+
+
 
 interface UserProfile {
   id: string
@@ -76,6 +81,8 @@ export default function HomePage() {
   const [newPostContent, setNewPostContent] = useState('')
   const [newPostGame, setNewPostGame] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
+  const [newPostYouTubeUrl, setNewPostYouTubeUrl] = useState('')
+
   
   const router = useRouter()
   const supabase = createClient()
@@ -184,33 +191,46 @@ export default function HomePage() {
     }
   }
 
-  const createPost = async () => {
-    if (!user || !newPostContent.trim()) return
+const createPost = async () => {
+  if (!user || !newPostContent.trim()) return
 
-    try {
-      const { data, error } = await supabase
-        .from('posts')
-        .insert({
-          user_id: user.id,
-          content: newPostContent,
-          game_tag: newPostGame || null
-        })
-        .select(`
-          *,
-          user:users(id, display_name, username, avatar_url, region)
-        `)
-        .single()
-
-      if (error) throw error
-
-      setPosts(prev => [data, ...prev])
-      setNewPostContent('')
-      setNewPostGame('')
-      setShowNewPost(false)
-    } catch (error) {
-      console.error('Error creating post:', error)
+  // Check if the content contains a YouTube URL
+  let mediaUrl = null
+  const urlRegex = /(https?:\/\/[^\s]+)/g
+  const urls = newPostContent.match(urlRegex)
+  
+  if (urls) {
+    const youtubeUrl = urls.find(url => isYouTubeUrl(url))
+    if (youtubeUrl) {
+      mediaUrl = youtubeUrl
     }
   }
+
+  try {
+    const { data, error } = await supabase
+      .from('posts')
+      .insert({
+        user_id: user.id,
+        content: newPostContent,
+        media_url: mediaUrl,
+        game_tag: newPostGame || null
+      })
+      .select(`
+        *,
+        user:users(id, display_name, username, avatar_url, region)
+      `)
+      .single()
+
+    if (error) throw error
+
+    setPosts(prev => [data, ...prev])
+    setNewPostContent('')
+    setNewPostGame('')
+    setShowNewPost(false)
+  } catch (error) {
+    console.error('Error creating post:', error)
+  }
+}
 
   const handleSignOut = async () => {
     try {
@@ -274,16 +294,20 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
+              {/* Desktop Logo */}
+              <div className="hidden lg:flex items-center gap-3">
                 <div className="bg-gradient-to-br from-[#FF9C00] to-[#AC3601] p-2 rounded-xl">
                   <img src="icon.png" alt="Pinged" className="h-6 w-6" />
                 </div>
+
+           
                 <span className="text-xl font-bold bg-gradient-to-r from-[#FF9C00] to-[#AC3601] bg-clip-text text-transparent">
                   PINGED.GG
                 </span>
               </div>
               
-              <div className="hidden md:flex items-center gap-1 bg-[#333333]/50 rounded-lg p-1">
+              {/* Navigation Tabs - Full width on mobile */}
+              <div className="flex items-center gap-1 bg-[#333333]/50 rounded-lg p-1 flex-1 lg:flex-initial">
                 {[
                   { key: 'all', label: 'All Posts', icon: TrendingUp },
                   { key: 'lfg', label: 'LFG', icon: Users },
@@ -292,14 +316,14 @@ export default function HomePage() {
                   <button
                     key={key}
                     onClick={() => setActiveFilter(key)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                    className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-md text-sm font-medium transition-all flex-1 lg:flex-initial justify-center ${
                       activeFilter === key 
                         ? 'bg-[#FF9C00]/20 text-[#FF9C00] shadow-lg' 
                         : 'text-[#CCCCCC] hover:text-white hover:bg-[#333333]/50'
                     }`}
                   >
                     <Icon className="h-4 w-4" />
-                    {label}
+                    <span className="hidden sm:inline">{label}</span>
                   </button>
                 ))}
               </div>
@@ -313,27 +337,51 @@ export default function HomePage() {
                 <Bell className="h-5 w-5 text-[#CCCCCC]" />
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#FF9C00] rounded-full"></div>
               </button>
-              <button 
-                onClick={() => router.push('/settings')}
-                className="p-2 hover:bg-[#333333]/50 rounded-lg transition-colors"
-              >
-                <Settings className="h-5 w-5 text-[#CCCCCC]" />
-              </button>
-              <button 
-                onClick={handleSignOut}
-                className="p-2 hover:bg-red-500/10 text-red-400 rounded-lg transition-colors"
-              >
-                <LogOut className="h-5 w-5" />
-              </button>
+              
+              {/* Settings Dropdown */}
+              <div className="relative group">
+                <button className="p-2 hover:bg-[#333333]/50 rounded-lg transition-colors">
+                  <Settings className="h-5 w-5 text-[#CCCCCC]" />
+                </button>
+                
+                {/* Dropdown Menu */}
+                <div className="absolute right-0 top-full mt-2 w-48 bg-[#333333] border border-[#666666]/50 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div className="py-2">
+                    <button 
+                      onClick={() => router.push('/settings')}
+                      className="w-full text-left px-4 py-2 text-[#CCCCCC] hover:text-white hover:bg-[#1A1A1A]/50 transition-colors flex items-center gap-3"
+                    >
+                      <Settings className="h-4 w-4" />
+                      Settings
+                    </button>
+                    <button 
+                      onClick={() => router.push(`/u/${profile?.username}`)}
+                      className="w-full text-left px-4 py-2 text-[#CCCCCC] hover:text-white hover:bg-[#1A1A1A]/50 transition-colors flex items-center gap-3"
+                    >
+                      <Users className="h-4 w-4" />
+                      View Profile
+                    </button>
+                    <div className="border-t border-[#666666]/30 my-2"></div>
+                    <button 
+                      onClick={handleSignOut}
+                      className="w-full text-left px-4 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors flex items-center gap-3"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid lg:grid-cols-4 gap-6">
-          {/* Enhanced Left Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+        {/* Mobile: Single column layout, Desktop: Three column layout */}
+        <div className="lg:grid lg:grid-cols-4 lg:gap-6 space-y-6 lg:space-y-0">
+          {/* Enhanced Left Sidebar - Hidden on Mobile */}
+          <div className="hidden lg:block lg:col-span-1 space-y-6">
             {/* User Profile Card */}
             <div className="bg-gradient-to-br from-[#333333]/90 to-[#1A1A1A]/50 backdrop-blur-xl rounded-2xl p-6 border border-[#666666]/50 shadow-2xl">
               <div className="text-center mb-6">
@@ -372,12 +420,6 @@ export default function HomePage() {
                 >
                   <Users className="h-4 w-4" />
                   Find Teammates
-                </button>
-                <button 
-                  onClick={() => router.push(`/u/${profile?.username}`)}
-                  className="w-full bg-[#333333]/50 hover:bg-[#333333]/70 text-white py-3 px-4 rounded-xl font-medium transition-all border border-[#666666]/50"
-                >
-                  View Profile
                 </button>
               </div>
             </div>
@@ -432,28 +474,32 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* Enhanced Main Feed */}
+          {/* Enhanced Main Feed - Full width on mobile, centered on desktop */}
           <div className="lg:col-span-2 space-y-6">
-            {/* New Post Card */}
-            <div className="bg-[#333333]/50 backdrop-blur-xl rounded-xl p-6 border border-[#666666]/50">
+             {/* Clips Carousel - Mobile only */}
+  
+    <ClipsCarousel />
+  
+            {/* New Post Card - Compact */}
+            <div className="bg-[#333333]/50 backdrop-blur-xl rounded-xl p-4 border border-[#666666]/50">
               {!showNewPost ? (
                 <button
                   onClick={() => setShowNewPost(true)}
-                  className="w-full text-left p-4 bg-[#1A1A1A]/30 hover:bg-[#1A1A1A]/50 rounded-xl transition-all"
+                  className="w-full text-left p-3 bg-[#1A1A1A]/30 hover:bg-[#1A1A1A]/50 rounded-xl transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-[#FF9C00] to-[#AC3601] rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-gradient-to-br from-[#FF9C00] to-[#AC3601] rounded-full flex items-center justify-center">
                       <span className="text-sm font-bold text-white">
                         {profile?.display_name?.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <span className="text-[#CCCCCC]">What&apos;s happening in your gaming world?</span>
+                    <span className="text-[#CCCCCC] text-sm">What&apos;s happening in your gaming world?</span>
                   </div>
                 </button>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-[#FF9C00] to-[#AC3601] rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-gradient-to-br from-[#FF9C00] to-[#AC3601] rounded-full flex items-center justify-center">
                       <span className="text-sm font-bold text-white">
                         {profile?.display_name?.charAt(0).toUpperCase()}
                       </span>
@@ -463,8 +509,8 @@ export default function HomePage() {
                         value={newPostContent}
                         onChange={(e) => setNewPostContent(e.target.value)}
                         placeholder="Share an update, look for teammates, or post a clip..."
-                        className="w-full bg-[#1A1A1A]/50 border border-[#666666]/50 rounded-xl p-4 resize-none focus:ring-2 focus:ring-[#FF9C00]/50 focus:border-[#FF9C00]/50 text-white placeholder-[#666666]"
-                        rows={3}
+                        className="w-full bg-[#1A1A1A]/50 border border-[#666666]/50 rounded-lg p-3 resize-none focus:ring-2 focus:ring-[#FF9C00]/50 focus:border-[#FF9C00]/50 text-white placeholder-[#666666] text-sm"
+                        rows={2}
                       />
                     </div>
                   </div>
@@ -473,7 +519,7 @@ export default function HomePage() {
                     <select
                       value={newPostGame}
                       onChange={(e) => setNewPostGame(e.target.value)}
-                      className="bg-[#1A1A1A]/50 border border-[#666666]/50 rounded-lg px-3 py-2 text-sm text-white"
+                      className="bg-[#1A1A1A]/50 border border-[#666666]/50 rounded-lg px-3 py-2 text-xs text-white"
                     >
                       <option value="">Select game (optional)</option>
                       {userGames.map((game) => (
@@ -483,17 +529,17 @@ export default function HomePage() {
                       ))}
                     </select>
 
-                    <div className="flex gap-3">
+                    <div className="flex gap-2">
                       <button
                         onClick={() => setShowNewPost(false)}
-                        className="px-4 py-2 text-[#CCCCCC] hover:text-white transition-colors"
+                        className="px-3 py-2 text-[#CCCCCC] hover:text-white transition-colors text-sm"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={createPost}
                         disabled={!newPostContent.trim()}
-                        className="bg-gradient-to-r from-[#FF9C00] to-[#AC3601] hover:from-[#FF9C00]/90 hover:to-[#AC3601]/90 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-2 rounded-lg font-medium text-white transition-all"
+                        className="bg-gradient-to-r from-[#FF9C00] to-[#AC3601] hover:from-[#FF9C00]/90 hover:to-[#AC3601]/90 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2 rounded-lg font-medium text-white transition-all text-sm"
                       >
                         Post
                       </button>
@@ -532,14 +578,35 @@ export default function HomePage() {
 
                   <p className="text-[#CCCCCC] mb-4 leading-relaxed">{post.content}</p>
 
-                  {post.media_url && (
-                    <div className="mb-4">
-                      <div className="bg-[#1A1A1A]/50 rounded-lg p-6 text-center border border-[#666666]/50">
-                        <Play className="h-8 w-8 text-[#666666] mx-auto mb-2" />
-                        <p className="text-sm text-[#666666]">Media content</p>
-                      </div>
-                    </div>
-                  )}
+    {post.media_url && (
+      <div className="mb-4">
+        {isYouTubeUrl(post.media_url) ? (
+          (() => {
+            const videoId = extractYouTubeVideoId(post.media_url)
+            if (videoId) {
+              return (
+                <YouTubeEmbed 
+                  videoId={videoId} 
+                  isShorts={isYouTubeShorts(post.media_url)}
+                />
+              )
+            }
+            return (
+              <div className="bg-[#1A1A1A]/50 rounded-lg p-6 text-center border border-[#666666]/50">
+                <Play className="h-8 w-8 text-[#666666] mx-auto mb-2" />
+                <p className="text-sm text-[#666666]">Invalid video URL</p>
+              </div>
+            )
+          })()
+        ) : (
+          // Handle other media types (images, etc.) - keep your existing placeholder for now
+          <div className="bg-[#1A1A1A]/50 rounded-lg p-6 text-center border border-[#666666]/50">
+            <Play className="h-8 w-8 text-[#666666] mx-auto mb-2" />
+            <p className="text-sm text-[#666666]">Media content</p>
+          </div>
+        )}
+      </div>
+    )}
 
                   <div className="flex items-center gap-6 text-[#CCCCCC]">
                     <button className="flex items-center gap-2 hover:text-red-400 transition-colors group">
@@ -582,8 +649,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Enhanced Right Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+          {/* Enhanced Right Sidebar - Hidden on Mobile/Tablet */}
+          <div className="hidden xl:block lg:col-span-1 space-y-6">
             {/* Trending Games */}
             <div className="bg-[#333333]/50 backdrop-blur-xl rounded-xl p-6 border border-[#666666]/50">
               <div className="flex items-center gap-2 mb-4">
