@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { X, Volume2, VolumeX, Play, Pause, RotateCcw, Share, Heart, MessageCircle } from 'lucide-react'
+import { X, Volume2, VolumeX, Play, Pause, RotateCcw, Share, Heart, MessageCircle, ArrowLeft } from 'lucide-react'
 
 interface FullscreenVideoPlayerProps {
   isOpen: boolean
@@ -16,6 +16,7 @@ interface FullscreenVideoPlayerProps {
     }
     content: string
     created_at: string
+    media_url?: string
   }
 }
 
@@ -63,6 +64,18 @@ export default function FullscreenVideoPlayer({
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen, onClose])
 
+  // Add YouTube URL cleaning function
+  const cleanPostContent = (content: string, mediaUrl?: string) => {
+    if (!mediaUrl) return content
+    
+    // Remove YouTube URLs from the content
+    const urlRegex = /(https?:\/\/[^\s]+)/g
+    return content.replace(urlRegex, (url) => {
+      // Check if it's a YouTube URL (basic check)
+      return url.includes('youtube.com') || url.includes('youtu.be') ? '' : url
+    }).trim().replace(/\s+/g, ' ') // Clean up extra whitespace
+  }
+
   if (!isOpen) return null
 
   const formatTimeAgo = (timestamp: string) => {
@@ -78,7 +91,15 @@ export default function FullscreenVideoPlayer({
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
-      {/* Close button */}
+      {/* Back button - top left */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 left-4 z-10 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors backdrop-blur-sm"
+      >
+        <ArrowLeft className="h-6 w-6" />
+      </button>
+
+      {/* Close button - top right */}
       <button
         onClick={onClose}
         className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors backdrop-blur-sm"
@@ -86,18 +107,18 @@ export default function FullscreenVideoPlayer({
         <X className="h-6 w-6" />
       </button>
 
-      {/* Video Player Container */}
-      <div className={`relative ${isShorts ? 'w-full max-w-[400px] h-[80vh]' : 'w-[90vw] max-w-6xl h-[80vh]'}`}>
+      {/* Video Player Container - Full screen */}
+      <div className={`relative ${isShorts ? 'w-full h-full max-w-[500px]' : 'w-full h-full'}`}>
         {/* YouTube iframe */}
         <iframe
           key={embedKey} // Force refresh when key changes
           ref={iframeRef}
-          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&fs=0&disablekb=1&iv_load_policy=3${isMuted ? '&mute=1' : ''}`}
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&fs=0&disablekb=1&iv_load_policy=3&cc_load_policy=0&playsinline=1${isMuted ? '&mute=1' : ''}`}
           title="YouTube video"
           frameBorder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowFullScreen
-          className="w-full h-full rounded-lg"
+          className="w-full h-full"
         />
 
         {/* Video Controls Overlay - only show for shorts */}
@@ -117,7 +138,7 @@ export default function FullscreenVideoPlayer({
                     <p className="text-white/70 text-xs">@{post.user.username} • {formatTimeAgo(post.created_at)}</p>
                   </div>
                 </div>
-                <p className="text-white text-sm leading-relaxed">{post.content}</p>
+                <p className="text-white text-sm leading-relaxed">{cleanPostContent(post.content, post.media_url)}</p>
               </div>
             )}
           </div>
@@ -159,7 +180,7 @@ export default function FullscreenVideoPlayer({
                 <h4 className="font-semibold text-white">{post.user.display_name}</h4>
                 <span className="text-[#FF9C00] text-sm">@{post.user.username}</span>
               </div>
-              <p className="text-white/70 text-sm">{post.content}</p>
+              <p className="text-white/70 text-sm">{cleanPostContent(post.content, post.media_url)}</p>
             </div>
             <div className="flex items-center gap-2">
               <button className="text-white/70 hover:text-white p-2 rounded-lg transition-colors">
