@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
 import { Gamepad2, Users, Calendar, Search, ArrowRight, Mail, Zap, Trophy, Target, Shield } from 'lucide-react'
 
 export default function LandingPage() {
@@ -14,41 +13,42 @@ export default function LandingPage() {
   const heroRef = useRef(null)
   const featuresRef = useRef(null)
   const router = useRouter()
-  const supabase = createClient()
 
-useEffect(() => {
+  useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      // Mock auth check - replace with your actual Supabase logic
       setLoading(false)
       
       // If user is already logged in, redirect to home or onboarding
-      if (user) {
-        // Check if user has completed onboarding by checking if they have a profile
-        const { data: profile } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', user.id)
-          .single()
-        
-        if (profile && profile.display_name) {
-          router.push('/home')
-        } else {
-          router.push('/onboarding')
-        }
-      }
+      // const { data: { user } } = await supabase.auth.getUser()
+      // if (user) {
+      //   // Check if user has completed onboarding
+      //   const { data: profile } = await supabase
+      //     .from('users')
+      //     .select('*')
+      //     .eq('id', user.id)
+      //     .single()
+      //   
+      //   if (profile && profile.display_name) {
+      //     router.push('/home')
+      //   } else {
+      //     router.push('/onboarding')
+      //   }
+      // }
     }
 
     getUser()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          router.push('/onboarding')
-        }
-      }
-    )
+    // Mock auth state change listener
+    // const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    //   (event, session) => {
+    //     if (event === 'SIGNED_IN' && session) {
+    //       router.push('/onboarding')
+    //     }
+    //   }
+    // )
 
-    return () => subscription.unsubscribe()
+    // return () => subscription.unsubscribe()
   }, [router])
 
   useEffect(() => {
@@ -86,16 +86,19 @@ useEffect(() => {
     }
   }, [])
   
-const handleGoogleLogin = async () => {
+  const handleGoogleLogin = async () => {
     setAuthLoading(true)
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      })
-      if (error) throw error
+      // Replace with your actual Supabase auth logic
+      // const { error } = await supabase.auth.signInWithOAuth({
+      //   provider: 'google',
+      //   options: {
+      //     redirectTo: `${window.location.origin}/auth/callback`
+      //   }
+      // })
+      // if (error) throw error
+      console.log('Google login clicked')
+      setTimeout(() => setAuthLoading(false), 2000) // Mock delay
     } catch (error) {
       console.error('Error during Google login:', error)
       setAuthLoading(false)
@@ -109,12 +112,12 @@ const handleGoogleLogin = async () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/30 via-blue-900/30 to-cyan-900/30"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-[#FF9C00]/20 via-[#AC3601]/20 to-black/40"></div>
         <div className="absolute inset-0">
           {isClient && [...Array(50)].map((_, i) => (
             <div
               key={i}
-              className="absolute bg-white rounded-full opacity-20 animate-pulse"
+              className="absolute bg-[#FF9C00] rounded-full opacity-20 animate-pulse"
               style={{
                 left: `${(i * 19 + 31) % 100}%`,
                 top: `${(i * 23 + 41) % 100}%`,
@@ -127,8 +130,8 @@ const handleGoogleLogin = async () => {
           ))}
         </div>
         <div className="relative z-10">
-          <div className="bg-gradient-to-r from-purple-600 to-cyan-400 p-6 rounded-full animate-spin">
-            <Gamepad2 className="h-16 w-16 text-white" />
+          <div className="bg-gradient-to-r from-[#FF9C00] to-[#AC3601] p-6 rounded-full animate-spin">
+            <img src="icon.png" alt="Pinged" className="h-16 w-16" />
           </div>
         </div>
       </div>
@@ -143,8 +146,8 @@ const handleGoogleLogin = async () => {
           to { opacity: 1; transform: translateY(0); }
         }
         @keyframes glow {
-          0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.5); }
-          50% { box-shadow: 0 0 40px rgba(168, 85, 247, 0.8), 0 0 60px rgba(168, 85, 247, 0.4); }
+          0%, 100% { box-shadow: 0 0 20px rgba(255, 156, 0, 0.5); }
+          50% { box-shadow: 0 0 40px rgba(255, 156, 0, 0.8), 0 0 60px rgba(255, 156, 0, 0.4); }
         }
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
@@ -170,13 +173,13 @@ const handleGoogleLogin = async () => {
 
       {/* Animated Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-cyan-900/20"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-[#FF9C00]/10 via-[#AC3601]/10 to-black/20"></div>
         
         {/* Floating particles - only render on client */}
         {isClient && [...Array(100)].map((_, i) => (
           <div
             key={i}
-            className="absolute bg-gradient-to-r from-purple-400 to-cyan-400 rounded-full opacity-10 animate-pulse"
+            className="absolute bg-gradient-to-r from-[#FF9C00] to-[#AC3601] rounded-full opacity-10 animate-pulse"
             style={{
               left: `${(i * 17 + 23) % 100}%`,
               top: `${(i * 13 + 37) % 100}%`,
@@ -190,14 +193,14 @@ const handleGoogleLogin = async () => {
 
         {/* Dynamic gradient orbs following mouse */}
         <div
-          className="absolute w-96 h-96 bg-gradient-to-r from-purple-600/30 to-cyan-600/30 rounded-full blur-3xl transition-all duration-1000 ease-out"
+          className="absolute w-96 h-96 bg-gradient-to-r from-[#FF9C00]/20 to-[#AC3601]/20 rounded-full blur-3xl transition-all duration-1000 ease-out"
           style={{
             left: `${mousePosition.x - 12}%`,
             top: `${mousePosition.y - 12}%`,
           }}
         />
         <div
-          className="absolute w-64 h-64 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-full blur-2xl transition-all duration-1500 ease-out"
+          className="absolute w-64 h-64 bg-gradient-to-r from-[#AC3601]/15 to-[#FF9C00]/15 rounded-full blur-2xl transition-all duration-1500 ease-out"
           style={{
             left: `${mousePosition.x - 8}%`,
             top: `${mousePosition.y - 8}%`,
@@ -208,33 +211,51 @@ const handleGoogleLogin = async () => {
       {/* Hero Section */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 parallax-bg">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-900/40 via-transparent to-cyan-900/40"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-[#FF9C00]/20 via-transparent to-[#AC3601]/20"></div>
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="animate-fade-in-up opacity-0" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
             <div className="flex justify-center mb-8 animate-float">
               <div className="relative">
-                <div className="bg-gradient-to-r from-purple-600 to-cyan-400 p-6 rounded-full animate-glow">
-                  <Gamepad2 className="h-20 w-20 text-white" />
+                <div className="bg-gradient-to-r from-[#FF9C00] to-[#AC3601] p-6 rounded-full animate-glow">
+                  <img src="icon.png" alt="Pinged" className="h-20 w-20" />
                 </div>
-                <div className="absolute -inset-2 bg-gradient-to-r from-purple-600 to-cyan-400 rounded-full opacity-30 animate-ping"></div>
+                <div className="absolute -inset-2 bg-gradient-to-r from-[#FF9C00] to-[#AC3601] rounded-full opacity-30 animate-ping"></div>
               </div>
             </div>
           </div>
           
           <div className="animate-fade-in-up opacity-0" style={{ animationDelay: '0.4s', animationFillMode: 'forwards' }}>
-            <h1 className="text-6xl md:text-8xl font-black mb-6 bg-gradient-to-r from-purple-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent animate-pulse">
-              PINGED<span className="text-cyan-400">.GG</span>
-            </h1>
+            <div className="mb-6">
+              <img 
+                src="logo.svg" 
+                alt="PINGED.GG" 
+                className="h-24 md:h-32 mx-auto"
+                style={{
+                  filter: 'brightness(0) saturate(100%) invert(100%) drop-shadow(0 0 20px rgba(255, 156, 0, 0.6))'
+                }}
+                onError={(e) => {
+                  // Fallback to text if SVG doesn't load
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'block';
+                }}
+              />
+              <h1 
+                className="text-6xl md:text-8xl font-black bg-gradient-to-r from-[#FF9C00] via-[#CCCCCC] to-[#FF9C00] bg-clip-text text-transparent animate-pulse" 
+                style={{ display: 'none' }}
+              >
+                PINGED<span className="text-[#FF9C00]">.GG</span>
+              </h1>
+            </div>
           </div>
           
           <div className="animate-fade-in-up opacity-0" style={{ animationDelay: '0.6s', animationFillMode: 'forwards' }}>
             <div className="relative mb-8">
-              <p className="text-2xl md:text-4xl text-gray-300 mb-4 font-bold tracking-wide">
-                THE <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">ULTIMATE</span> GAMING NETWORK
+              <p className="text-2xl md:text-4xl text-[#CCCCCC] mb-4 font-bold tracking-wide">
+                THE <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF9C00] to-[#AC3601]">ULTIMATE</span> GAMING NETWORK
               </p>
-              <p className="text-lg md:text-xl text-gray-400 max-w-4xl mx-auto leading-relaxed">
+              <p className="text-lg md:text-xl text-[#666666] max-w-4xl mx-auto leading-relaxed">
                 Connect with elite gamers • Build unstoppable squads • Dominate every match
               </p>
             </div>
@@ -245,7 +266,7 @@ const handleGoogleLogin = async () => {
               <button
                 onClick={handleGoogleLogin}
                 disabled={authLoading}
-                className="group relative overflow-hidden bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white px-12 py-6 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed min-w-[280px] border border-purple-500/50"
+                className="group relative overflow-hidden bg-gradient-to-r from-[#FF9C00] to-[#AC3601] hover:from-[#FF9C00]/90 hover:to-[#AC3601]/90 text-white px-12 py-6 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed min-w-[280px] border border-[#FF9C00]/50"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                 <div className="relative flex items-center gap-3 justify-center">
@@ -262,9 +283,9 @@ const handleGoogleLogin = async () => {
               <button
                 onClick={handleEmailSignup}
                 disabled={authLoading}
-                className="group relative overflow-hidden bg-transparent border-2 border-cyan-400 hover:bg-cyan-400 text-cyan-400 hover:text-black px-12 py-6 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed min-w-[280px]"
+                className="group relative overflow-hidden bg-transparent border-2 border-[#FF9C00] hover:bg-[#FF9C00] text-[#FF9C00] hover:text-black px-12 py-6 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed min-w-[280px]"
               >
-                <div className="absolute inset-0 bg-cyan-400 -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
+                <div className="absolute inset-0 bg-[#FF9C00] -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
                 <div className="relative flex items-center gap-3 justify-center">
                   <Mail className="h-6 w-6" />
                   ⚡ EMAIL SIGNUP
@@ -275,127 +296,136 @@ const handleGoogleLogin = async () => {
 
           {/* Scroll indicator */}
           <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-            <div className="w-6 h-10 border-2 border-cyan-400 rounded-full flex justify-center">
-              <div className="w-1 h-3 bg-cyan-400 rounded-full mt-2 animate-pulse"></div>
+            <div className="w-6 h-10 border-2 border-[#FF9C00] rounded-full flex justify-center">
+              <div className="w-1 h-3 bg-[#FF9C00] rounded-full mt-2 animate-pulse"></div>
             </div>
           </div>
         </div>
 
         {/* Gaming-themed decorative elements */}
-        <div className="absolute top-20 left-10 text-purple-400 opacity-30 animate-float" style={{ animationDelay: '1s' }}>
+        <div className="absolute top-20 left-10 text-[#FF9C00] opacity-30 animate-float" style={{ animationDelay: '1s' }}>
           <Target className="h-12 w-12" />
         </div>
-        <div className="absolute top-40 right-16 text-cyan-400 opacity-30 animate-float" style={{ animationDelay: '2s' }}>
+        <div className="absolute top-40 right-16 text-[#AC3601] opacity-30 animate-float" style={{ animationDelay: '2s' }}>
           <Shield className="h-16 w-16" />
         </div>
-        <div className="absolute bottom-40 left-20 text-purple-400 opacity-30 animate-float" style={{ animationDelay: '3s' }}>
+        <div className="absolute bottom-40 left-20 text-[#FF9C00] opacity-30 animate-float" style={{ animationDelay: '3s' }}>
           <Trophy className="h-14 w-14" />
         </div>
-        <div className="absolute bottom-60 right-10 text-cyan-400 opacity-30 animate-float" style={{ animationDelay: '1.5s' }}>
+        <div className="absolute bottom-60 right-10 text-[#AC3601] opacity-30 animate-float" style={{ animationDelay: '1.5s' }}>
           <Zap className="h-10 w-10" />
         </div>
       </section>
 
-{/* Features Section */}
-<section className="relative py-32">
-  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/50 to-transparent"></div>
-  
-  <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div className="text-center mb-20">
-      <h2 className="text-4xl md:text-6xl font-black mb-6 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-        LEVEL UP YOUR GAME
-      </h2>
-      <p className="text-xl text-gray-300 font-semibold tracking-wide">
-        🎮 BUILT BY LEGENDS, FOR LEGENDS 🎮
-      </p>
-    </div>
+      {/* Features Section */}
+      <section className="relative py-32">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#333333]/30 to-transparent"></div>
+        
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-6xl font-black mb-6 bg-gradient-to-r from-[#FF9C00] to-[#AC3601] bg-clip-text text-transparent">
+              LEVEL UP YOUR GAME
+            </h2>
+            <p className="text-xl text-[#CCCCCC] font-semibold tracking-wide">
+              🎮 BUILT BY LEGENDS, FOR LEGENDS 🎮
+            </p>
+          </div>
 
-    <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
-      {[
-        {
-          icon: Users,
-          title: "SQUAD FINDER",
-          description: "AI-powered matching system finds your perfect teammates based on skill, rank, and gaming DNA.",
-          color: "from-purple-600 to-purple-400"
-        },
-        {
-          icon: Calendar,
-          title: "SYNC MODE",
-          description: "Real-time availability tracking. Get instantly pinged when your squad is ready to dominate.",
-          color: "from-cyan-600 to-cyan-400"
-        },
-        {
-          icon: Trophy,
-          title: "PRO PROFILES",
-          description: "Showcase your ranks, achievements, and playstyle. Let your skills do the talking.",
-          color: "from-purple-600 to-cyan-400"
-        }
-      ].map((feature, index) => (
-        <div key={index} className="group">
-          <div className="relative bg-gradient-to-br from-gray-800/80 to-gray-900/80 p-8 rounded-2xl border border-gray-700/50 hover:border-purple-500/50 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl backdrop-blur-sm h-80 flex flex-col">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/10 to-cyan-900/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            
-            <div className="relative z-10 flex flex-col items-center text-center h-full">
-              <div className={`bg-gradient-to-r ${feature.color} p-4 rounded-2xl w-20 h-20 mb-6 flex items-center justify-center group-hover:animate-pulse`}>
-                <feature.icon className="h-10 w-10 text-white" />
-              </div>
-              <h3 className="text-2xl font-black mb-4 tracking-wide">{feature.title}</h3>
-              <div className="flex-1 flex items-center">
-                <p className="text-gray-300 leading-relaxed text-center">
-                  {feature.description}
-                </p>
-              </div>
-            </div>
+          <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
+            {[
+              {
+                icon: Users,
+                title: "SQUAD FINDER",
+                description: "AI-powered matching system finds your perfect teammates based on skill, rank, and gaming DNA.",
+                color: "from-[#FF9C00] to-[#AC3601]"
+              },
+              {
+                icon: Calendar,
+                title: "SYNC MODE",
+                description: "Real-time availability tracking. Get instantly pinged when your squad is ready to dominate.",
+                color: "from-[#AC3601] to-[#FF9C00]"
+              },
+              {
+                icon: Trophy,
+                title: "PRO PROFILES",
+                description: "Showcase your ranks, achievements, and playstyle. Let your skills do the talking.",
+                color: "from-[#FF9C00] to-[#AC3601]"
+              }
+            ].map((feature, index) => (
+              <div key={index} className="group">
+                <div className="relative bg-gradient-to-br from-[#333333]/80 to-[#333333]/60 p-8 rounded-2xl border border-[#666666]/50 hover:border-[#FF9C00]/50 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl backdrop-blur-sm h-80 flex flex-col">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#FF9C00]/5 to-[#AC3601]/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  
+                  <div className="relative z-10 flex flex-col items-center text-center h-full">
+                    <div className={`bg-gradient-to-r ${feature.color} p-4 rounded-2xl w-20 h-20 mb-6 flex items-center justify-center group-hover:animate-pulse`}>
+                      <feature.icon className="h-10 w-10 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-black mb-4 tracking-wide text-white">{feature.title}</h3>
+                    <div className="flex-1 flex items-center">
+                      <p className="text-[#CCCCCC] leading-relaxed text-center">
+                        {feature.description}
+                      </p>
+                    </div>
+                  </div>
 
-            <div className={`absolute inset-0 bg-gradient-to-r ${feature.color} opacity-0 group-hover:opacity-20 rounded-2xl blur-xl transition-opacity duration-500 -z-10`}></div>
+                  <div className={`absolute inset-0 bg-gradient-to-r ${feature.color} opacity-0 group-hover:opacity-20 rounded-2xl blur-xl transition-opacity duration-500 -z-10`}></div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      ))}
-    </div>
-  </div>
-</section>
+      </section>
 
-{/* CTA Section */}
-<section className="relative py-32">
-  <div className="absolute inset-0 bg-gradient-to-r from-purple-900/80 via-blue-900/80 to-cyan-900/80"></div>
-  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.3)_0%,transparent_70%)]"></div>
-  
-  <div className="relative z-10 max-w-5xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-    <h2 className="text-4xl md:text-6xl font-black mb-8 bg-gradient-to-r from-white via-purple-200 to-cyan-200 bg-clip-text text-transparent">
-      READY TO DOMINATE?
-    </h2>
-    <p className="text-xl md:text-2xl text-gray-200 mb-12 font-semibold">
-      🔥 JOIN <span className="text-cyan-400 font-black">50K+</span> ELITE GAMERS ALREADY CRUSHING IT 🔥
-    </p>
-    
-    <div className="flex justify-center">
-      <button
-        onClick={handleGoogleLogin}
-        disabled={authLoading}
-        className="group relative overflow-hidden bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 hover:from-purple-500 hover:via-pink-500 hover:to-cyan-500 text-white px-12 md:px-16 py-6 md:py-8 rounded-2xl font-black text-lg md:text-2xl transition-all duration-300 transform hover:scale-110 hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-        <div className="relative flex items-center gap-4 justify-center">
-          🚀 ENTER THE ARENA <ArrowRight className="h-6 w-6 md:h-8 md:w-8" />
+      {/* CTA Section */}
+      <section className="relative py-32">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#FF9C00]/20 via-[#AC3601]/20 to-[#333333]/40"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,156,0,0.2)_0%,transparent_70%)]"></div>
+        
+        <div className="relative z-10 max-w-5xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl md:text-6xl font-black mb-8 bg-gradient-to-r from-white via-[#CCCCCC] to-[#FF9C00] bg-clip-text text-transparent">
+            READY TO DOMINATE?
+          </h2>
+          <p className="text-xl md:text-2xl text-[#CCCCCC] mb-12 font-semibold">
+            🔥 JOIN <span className="text-[#FF9C00] font-black">50K+</span> ELITE GAMERS ALREADY CRUSHING IT 🔥
+          </p>
+          
+          <div className="flex justify-center">
+            <button
+              onClick={handleGoogleLogin}
+              disabled={authLoading}
+              className="group relative overflow-hidden bg-gradient-to-r from-[#FF9C00] via-[#AC3601] to-[#FF9C00] hover:from-[#FF9C00]/90 hover:via-[#AC3601]/90 hover:to-[#FF9C00]/90 text-white px-12 md:px-16 py-6 md:py-8 rounded-2xl font-black text-lg md:text-2xl transition-all duration-300 transform hover:scale-110 hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+              <div className="relative flex items-center gap-4 justify-center">
+                🚀 ENTER THE ARENA <ArrowRight className="h-6 w-6 md:h-8 md:w-8" />
+              </div>
+            </button>
+          </div>
         </div>
-      </button>
-    </div>
-  </div>
-</section>
+      </section>
 
       {/* Footer */}
-      <footer className="relative bg-black border-t border-purple-500/30 py-16">
+      <footer className="relative bg-black border-t border-[#FF9C00]/30 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="mb-8">
-              <div className="bg-gradient-to-r from-purple-600 to-cyan-400 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Gamepad2 className="h-8 w-8 text-white" />
+              <div className="bg-gradient-to-r from-[#FF9C00] to-[#AC3601] p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <img src="icon.png" alt="Pinged" className="h-8 w-8" />
               </div>
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                PINGED.GG
-              </h3>
+              <img 
+                src="logo.svg" 
+                alt="PINGED.GG" 
+                className="h-8 mx-auto"
+                style={{
+                  filter: 'brightness(0) saturate(100%) invert(100%) drop-shadow(0 0 15px rgba(255, 156, 0, 0.4))'
+                }}
+                onError={(e) => {
+                  // Fallback if SVG doesn't load
+                  e.target.outerHTML = '<div class="text-2xl font-bold bg-gradient-to-r from-[#FF9C00] to-[#AC3601] bg-clip-text text-transparent">PINGED.GG</div>';
+                }}
+              />
             </div>
-            <p className="text-gray-400 text-lg font-semibold">
+            <p className="text-[#666666] text-lg font-semibold">
               © 2024 Pinged.gg • 🎮 FORGED BY GAMERS, FOR GAMERS 🎮
             </p>
           </div>
