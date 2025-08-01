@@ -191,18 +191,28 @@ export default function HomePage() {
     }
   }
 
+
 const createPost = async () => {
   if (!user || !newPostContent.trim()) return
 
-  // Check if the content contains a YouTube URL
+  // Check for YouTube URLs in two places:
+  // 1. Dedicated YouTube URL field (takes priority)
+  // 2. URLs within the post content
   let mediaUrl = null
-  const urlRegex = /(https?:\/\/[^\s]+)/g
-  const urls = newPostContent.match(urlRegex)
   
-  if (urls) {
-    const youtubeUrl = urls.find(url => isYouTubeUrl(url))
-    if (youtubeUrl) {
-      mediaUrl = youtubeUrl
+  // First check the dedicated YouTube URL field
+  if (newPostYouTubeUrl && isYouTubeUrl(newPostYouTubeUrl)) {
+    mediaUrl = newPostYouTubeUrl
+  } else {
+    // If no dedicated URL, check content for YouTube URLs
+    const urlRegex = /(https?:\/\/[^\s]+)/g
+    const urls = newPostContent.match(urlRegex)
+    
+    if (urls) {
+      const youtubeUrl = urls.find(url => isYouTubeUrl(url))
+      if (youtubeUrl) {
+        mediaUrl = youtubeUrl
+      }
     }
   }
 
@@ -226,6 +236,7 @@ const createPost = async () => {
     setPosts(prev => [data, ...prev])
     setNewPostContent('')
     setNewPostGame('')
+    setNewPostYouTubeUrl('')  // Clear the YouTube URL field
     setShowNewPost(false)
   } catch (error) {
     console.error('Error creating post:', error)
