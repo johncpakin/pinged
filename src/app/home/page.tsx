@@ -26,6 +26,7 @@ import {
 import ClipsCarousel from '@/components/ui/ClipsCarousel'
 import { isYouTubeUrl, extractYouTubeVideoId, isYouTubeShorts } from '@/lib/youtube'
 import YouTubeEmbed from '@/components/ui/YouTubeEmbed'
+import FullscreenVideoPlayer from '@/components/ui/FullscreenVideoPlayer'
 
 
 
@@ -87,6 +88,18 @@ export default function HomePage() {
   const router = useRouter()
   const supabase = createClient()
 
+  const cleanPostContent = (content: string, mediaUrl?: string) => {
+    if (!mediaUrl || !isYouTubeUrl(mediaUrl)) {
+      return content
+    }
+    
+    // Remove the YouTube URL from the content if it exists
+    const urlRegex = /(https?:\/\/[^\s]+)/g
+    return content.replace(urlRegex, (url) => {
+      return isYouTubeUrl(url) ? '' : url
+    }).trim().replace(/\s+/g, ' ') // Clean up extra whitespace
+  }
+
   // Static/memoized fake data to prevent re-calculation on every render
   const trendingGamesData = useMemo(() => [
     { name: 'Valorant', active: 1247, rank: 1 },
@@ -94,6 +107,36 @@ export default function HomePage() {
     { name: 'CS2', active: 743, rank: 3 },
     { name: 'Overwatch 2', active: 521, rank: 4 }
   ], [])
+
+  const [fullscreenVideo, setFullscreenVideo] = useState<{
+  isOpen: boolean
+  videoId: string
+  isShorts: boolean
+  post?: Post
+}>({
+  isOpen: false,
+  videoId: '',
+  isShorts: false,
+  post: undefined
+})
+
+  const openFullscreenVideo = (videoId: string, isShorts: boolean, post: Post) => {
+  setFullscreenVideo({
+    isOpen: true,
+    videoId,
+    isShorts,
+    post
+  })
+}
+
+const closeFullscreenVideo = () => {
+  setFullscreenVideo({
+    isOpen: false,
+    videoId: '',
+    isShorts: false,
+    post: undefined
+  })
+}
 
   const fakeHoursPlayed = useMemo(() => Math.floor(Math.random() * 80) + 40, [])
   const weeklyActivityData = useMemo(() => [40, 65, 30, 80, 45, 70, 90], [])
@@ -562,83 +605,92 @@ const createPost = async () => {
 
             {/* Posts Feed */}
             <div className="space-y-4">
-              {posts.map((post) => (
-                <div key={post.id} className="bg-[#333333]/50 backdrop-blur-xl rounded-xl p-6 border border-[#666666]/50 hover:border-[#FF9C00]/30 transition-all">
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-[#FF9C00] to-[#AC3601] rounded-full flex items-center justify-center">
-                      <span className="font-bold text-white">
-                        {post.user.display_name?.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold text-white">{post.user.display_name}</h4>
-                        <span className="text-[#FF9C00] text-sm">@{post.user.username}</span>
-                        {post.user.region && (
-                          <span className="text-xs text-[#666666]">• {post.user.region}</span>
-                        )}
-                        {post.game_tag && (
-                          <span className="text-xs bg-[#AC3601]/20 text-[#AC3601] px-2 py-1 rounded-full border border-[#AC3601]/20">
-                            {post.game_tag}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-[#CCCCCC]">{formatTimeAgo(post.created_at)}</p>
-                    </div>
-                  </div>
+              {posts.map((post) => {
+  const hasVideo = post.media_url && isYouTubeUrl(post.media_url)
+  const videoId = hasVideo ? extractYouTubeVideoId(post.media_url) : null
+  const isVideoShorts = hasVideo ? isYouTubeShorts(post.media_url) : false
+  const cleanedContent = cleanPostContent(post.content, post.media_url)
+  
+  return (
+    <div key={post.id} className="bg-[#333333]/50 backdrop-blur-xl rounded-xl overflow-hidden border border-[#666666]/50 hover:border-[#FF9C00]/30 transition-all">
+      {/* User Info - Always at the top */}
+      <div className="p-6 pb-0">
+        <div className="flex items-start gap-4 mb-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-[#FF9C00] to-[#AC3601] rounded-full flex items-center justify-center">
+            <span className="font-bold text-white">
+              {post.user.display_name?.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h4 className="font-semibold text-white">{post.user.display_name}</h4>
+              <span className="text-[#FF9C00] text-sm">@{post.user.username}</span>
+              {post.user.region && (
+                <span className="text-xs text-[#666666]">• {post.user.region}</span>
+              )}
+              {post.game_tag && (
+                <span className="text-xs bg-[#AC3601]/20 text-[#AC3601] px-2 py-1 rounded-full border border-[#AC3601]/20">
+                  {post.game_tag}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-[#CCCCCC]">{formatTimeAgo(post.created_at)}</p>
+          </div>
+        </div>
 
-                  <p className="text-[#CCCCCC] mb-4 leading-relaxed">{post.content}</p>
+        {/* Post Content - Only show if there's actual content after cleaning */}
+        {cleanedContent && (
+          <p className="text-[#CCCCCC] mb-4 leading-relaxed">{cleanedContent}</p>
+        )}
+      </div>
 
-    {post.media_url && (
-      <div className="mb-4">
-        {isYouTubeUrl(post.media_url) ? (
-          (() => {
-            const videoId = extractYouTubeVideoId(post.media_url)
-            if (videoId) {
-              return (
-                <YouTubeEmbed 
-                  videoId={videoId} 
-                  isShorts={isYouTubeShorts(post.media_url)}
-                />
-              )
-            }
-            return (
-              <div className="bg-[#1A1A1A]/50 rounded-lg p-6 text-center border border-[#666666]/50">
-                <Play className="h-8 w-8 text-[#666666] mx-auto mb-2" />
-                <p className="text-sm text-[#666666]">Invalid video URL</p>
-              </div>
-            )
-          })()
-        ) : (
-          // Handle other media types (images, etc.) - keep your existing placeholder for now
+      {/* Video Section - Full width, no padding */}
+      {hasVideo && videoId && (
+        <div className="relative">
+          <YouTubeEmbed 
+            videoId={videoId} 
+            isShorts={isVideoShorts}
+            onFullscreen={() => openFullscreenVideo(videoId, isVideoShorts, post)}
+            showPlayButton={true}
+            className="rounded-none" // No rounding since it's in the middle
+          />
+        </div>
+      )}
+
+      {/* Non-YouTube Media */}
+      {post.media_url && !isYouTubeUrl(post.media_url) && (
+        <div className="px-6 pb-4">
           <div className="bg-[#1A1A1A]/50 rounded-lg p-6 text-center border border-[#666666]/50">
             <Play className="h-8 w-8 text-[#666666] mx-auto mb-2" />
             <p className="text-sm text-[#666666]">Media content</p>
           </div>
-        )}
-      </div>
-    )}
+        </div>
+      )}
 
-                  <div className="flex items-center gap-6 text-[#CCCCCC]">
-                    <button className="flex items-center gap-2 hover:text-red-400 transition-colors group">
-                      <Heart className="h-5 w-5 group-hover:fill-current" />
-                      <span className="text-sm">Like</span>
-                    </button>
-                    <button className="flex items-center gap-2 hover:text-[#FF9C00] transition-colors">
-                      <MessageCircle className="h-5 w-5" />
-                      <span className="text-sm">Comment</span>
-                    </button>
-                    <button className="flex items-center gap-2 hover:text-green-400 transition-colors">
-                      <UserPlus className="h-5 w-5" />
-                      <span className="text-sm">Connect</span>
-                    </button>
-                    <button className="flex items-center gap-2 hover:text-white transition-colors">
-                      <Share className="h-5 w-5" />
-                      <span className="text-sm">Share</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
+      {/* Action Buttons - Always at the bottom */}
+      <div className="p-6 pt-4">
+        <div className="flex items-center gap-6 text-[#CCCCCC]">
+          <button className="flex items-center gap-2 hover:text-red-400 transition-colors group">
+            <Heart className="h-5 w-5 group-hover:fill-current" />
+            <span className="text-sm">Like</span>
+          </button>
+          <button className="flex items-center gap-2 hover:text-[#FF9C00] transition-colors">
+            <MessageCircle className="h-5 w-5" />
+            <span className="text-sm">Comment</span>
+          </button>
+          <button className="flex items-center gap-2 hover:text-green-400 transition-colors">
+            <UserPlus className="h-5 w-5" />
+            <span className="text-sm">Connect</span>
+          </button>
+          <button className="flex items-center gap-2 hover:text-white transition-colors">
+            <Share className="h-5 w-5" />
+            <span className="text-sm">Share</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+})}
 
               {posts.length === 0 && (
                 <div className="bg-[#333333]/50 backdrop-blur-xl rounded-xl p-12 text-center border border-[#666666]/50">
@@ -804,6 +856,14 @@ const createPost = async () => {
           </div>
         </div>
       </div>
+      {/* Fullscreen Video Player Modal */}
+      <FullscreenVideoPlayer
+        isOpen={fullscreenVideo.isOpen}
+        onClose={closeFullscreenVideo}
+        videoId={fullscreenVideo.videoId}
+        isShorts={fullscreenVideo.isShorts}
+        post={fullscreenVideo.post}
+      />
     </div>
   )
 }
