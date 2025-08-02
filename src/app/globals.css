@@ -3,6 +3,55 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* Orange Theme (Default) */
+  --brand-primary: #FF9C00;
+  --brand-primary-hover: #E68900;
+  --brand-secondary: #AC3601;
+  --brand-secondary-hover: #8B2B00;
+  
+  /* UI Base Colors */
+  --ui-background: #000000;
+  --ui-surface: #1A1A1A;
+  --ui-surface-hover: #333333;
+  --ui-border: #666666;
+  
+  /* Text Colors */
+  --text-primary: #FFFFFF;
+  --text-secondary: #CCCCCC;
+  --text-muted: #666666;
+}
+
+/* Blue Theme */
+[data-theme="blue"] {
+  --brand-primary: #3B82F6;
+  --brand-primary-hover: #2563EB;
+  --brand-secondary: #1E40AF;
+  --brand-secondary-hover: #1D4ED8;
+}
+
+/* Pink Theme */
+[data-theme="pink"] {
+  --brand-primary: #EC4899;
+  --brand-primary-hover: #DB2777;
+  --brand-secondary: #BE185D;
+  --brand-secondary-hover: #9D174D;
+}
+
+/* Purple Theme */
+[data-theme="purple"] {
+  --brand-primary: #8B5CF6;
+  --brand-primary-hover: #7C3AED;
+  --brand-secondary: #6D28D9;
+  --brand-secondary-hover: #5B21B6;
+}
+
+/* Green Theme */
+[data-theme="green"] {
+  --brand-primary: #10B981;
+  --brand-primary-hover: #059669;
+  --brand-secondary: #047857;
+  --brand-secondary-hover: #065F46;
 }
 
 @theme inline {
@@ -10,6 +59,23 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* Brand Colors */
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-hover: var(--brand-primary-hover);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-secondary-hover: var(--brand-secondary-hover);
+  
+  /* UI Colors */
+  --color-ui-background: var(--ui-background);
+  --color-ui-surface: var(--ui-surface);
+  --color-ui-surface-hover: var(--ui-surface-hover);
+  --color-ui-border: var(--ui-border);
+  
+  /* Text Colors */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
 }
 
 @media (prefers-color-scheme: dark) {
