@@ -21,11 +21,14 @@ import {
   BarChart3,
   Zap,
   Target,
-  Trophy
+  Trophy,
+  Trash2
 } from 'lucide-react'
 import ClipsCarousel from '@/components/ui/ClipsCarousel'
 import { isYouTubeUrl, extractYouTubeVideoId, isYouTubeShorts } from '@/lib/youtube'
+import { isTwitchUrl, extractTwitchInfo } from '@/lib/twitch'
 import YouTubeEmbed from '@/components/ui/YouTubeEmbed'
+import TwitchEmbed from '@/components/ui/TwitchEmbed'
 import FullscreenVideoPlayer from '@/components/ui/FullscreenVideoPlayer'
 
 interface UserProfile {
@@ -86,14 +89,14 @@ export default function HomePage() {
   const supabase = createClient()
 
   const cleanPostContent = (content: string, mediaUrl?: string) => {
-    if (!mediaUrl || !isYouTubeUrl(mediaUrl)) {
+    if (!mediaUrl || (!isYouTubeUrl(mediaUrl) && !isTwitchUrl(mediaUrl))) {
       return content
     }
     
-    // Remove the YouTube URL from the content if it exists
+    // Remove the YouTube/Twitch URL from the content if it exists
     const urlRegex = /(https?:\/\/[^\s]+)/g
     return content.replace(urlRegex, (url) => {
-      return isYouTubeUrl(url) ? '' : url
+      return (isYouTubeUrl(url) || isTwitchUrl(url)) ? '' : url
     }).trim().replace(/\s+/g, ' ') // Clean up extra whitespace
   }
 
@@ -240,17 +243,17 @@ export default function HomePage() {
     let mediaUrl = null
     
     // First check the dedicated YouTube URL field
-    if (newPostYouTubeUrl && isYouTubeUrl(newPostYouTubeUrl)) {
+    if (newPostYouTubeUrl && (isYouTubeUrl(newPostYouTubeUrl) || isTwitchUrl(newPostYouTubeUrl))) {
       mediaUrl = newPostYouTubeUrl
     } else {
-      // If no dedicated URL, check content for YouTube URLs
+      // If no dedicated URL, check content for YouTube/Twitch URLs
       const urlRegex = /(https?:\/\/[^\s]+)/g
       const urls = newPostContent.match(urlRegex)
       
       if (urls) {
-        const youtubeUrl = urls.find(url => isYouTubeUrl(url))
-        if (youtubeUrl) {
-          mediaUrl = youtubeUrl
+        const videoUrl = urls.find(url => isYouTubeUrl(url) || isTwitchUrl(url))
+        if (videoUrl) {
+          mediaUrl = videoUrl
         }
       }
     }
@@ -293,6 +296,36 @@ export default function HomePage() {
     } catch (error) {
       console.error('Unexpected sign out error:', error)
       window.location.href = '/'
+    }
+  }
+
+  const deletePost = async (postId: string) => {
+    if (!user) {
+      console.error('No user found for deletion')
+      return
+    }
+
+    console.log('Attempting to delete post:', postId, 'by user:', user.id)
+
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId)
+        .eq('user_id', user.id) // Ensure user can only delete their own posts
+        .select() // Return deleted rows to confirm deletion
+
+      if (error) {
+        console.error('Supabase delete error:', error)
+        throw error
+      }
+
+      console.log('Delete successful, deleted:', data)
+
+      // Remove post from local state
+      setPosts(prev => prev.filter(post => post.id !== postId))
+    } catch (error) {
+      console.error('Error deleting post:', error)
     }
   }
 
@@ -599,9 +632,15 @@ export default function HomePage() {
             {/* Posts Feed */}
             <div className="space-y-4">
               {posts.map((post) => {
-                const hasVideo = post.media_url && isYouTubeUrl(post.media_url)
-                const videoId = hasVideo ? extractYouTubeVideoId(post.media_url) : null
-                const isVideoShorts = hasVideo ? isYouTubeShorts(post.media_url) : false
+                const hasYouTubeVideo = post.media_url && isYouTubeUrl(post.media_url)
+                const hasTwitchVideo = post.media_url && isTwitchUrl(post.media_url)
+                const hasVideo = hasYouTubeVideo || hasTwitchVideo
+                
+                const youtubeVideoId = hasYouTubeVideo ? extractYouTubeVideoId(post.media_url) : null
+                const isVideoShorts = hasYouTubeVideo ? isYouTubeShorts(post.media_url) : false
+                
+                const twitchInfo = hasTwitchVideo ? extractTwitchInfo(post.media_url) : null
+                
                 const cleanedContent = cleanPostContent(post.content, post.media_url)
                 
                 return (
@@ -629,6 +668,17 @@ export default function HomePage() {
                           </div>
                           <p className="text-xs text-text-secondary">{formatTimeAgo(post.created_at)}</p>
                         </div>
+                        
+                        {/* Delete button - only show for post author */}
+                        {user?.id === post.user_id && (
+                          <button
+                            onClick={() => deletePost(post.id)}
+                            className="p-2 hover:bg-red-500/10 rounded-lg transition-colors text-text-secondary hover:text-red-400"
+                            title="Delete post"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
 
                       {/* Post Content - Only show if there's actual content after cleaning */}
@@ -638,20 +688,32 @@ export default function HomePage() {
                     </div>
 
                     {/* Video Section - Full width, no padding */}
-                    {hasVideo && videoId && (
+                    {hasYouTubeVideo && youtubeVideoId && (
                       <div className="relative">
                         <YouTubeEmbed 
-                          videoId={videoId} 
+                          videoId={youtubeVideoId} 
                           isShorts={isVideoShorts}
-                          onFullscreen={() => openFullscreenVideo(videoId, isVideoShorts, post)}
+                          onFullscreen={() => openFullscreenVideo(youtubeVideoId, isVideoShorts, post)}
                           showPlayButton={true}
-                          className="rounded-none" // No rounding since it's in the middle
+                          className="rounded-none"
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Twitch Video Section */}
+                    {hasTwitchVideo && twitchInfo && (
+                      <div className="relative">
+                        <TwitchEmbed 
+                          type={twitchInfo.type}
+                          id={twitchInfo.id}
+                          showPlayButton={true}
+                          className="rounded-none"
                         />
                       </div>
                     )}
 
-                    {/* Non-YouTube Media */}
-                    {post.media_url && !isYouTubeUrl(post.media_url) && (
+                    {/* Non-YouTube/Twitch Media */}
+                    {post.media_url && !isYouTubeUrl(post.media_url) && !isTwitchUrl(post.media_url) && (
                       <div className="px-6 pb-4">
                         <div className="bg-ui-surface/50 rounded-lg p-6 text-center border border-ui-border/50">
                           <Play className="h-8 w-8 text-text-muted mx-auto mb-2" />

@@ -48,11 +48,11 @@ export default function ClipsCarousel() {
   return (
     <div className="w-full relative">
       <div className="flex items-center justify-between mb-4 px-2">
-        <h3 className="text-lg font-bold text-white flex items-center gap-2">
-          <Play className="h-5 w-5 text-[#FF9C00]" />
+        <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
+          <Play className="h-5 w-5 text-brand-primary" />
           Latest Clips
         </h3>
-        <button className="text-[#FF9C00] text-sm font-medium hover:text-[#FF9C00]/80 transition-colors">
+        <button className="text-brand-primary text-sm font-medium hover:text-brand-primary/80 transition-colors">
           View All
         </button>
       </div>
@@ -63,7 +63,7 @@ export default function ClipsCarousel() {
         {showLeftButton && (
           <button
             onClick={scrollLeft}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/80 hover:bg-black/90 text-white p-2 rounded-full shadow-lg transition-all backdrop-blur-sm border border-[#666666]/30"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-ui-background/80 hover:bg-ui-background/90 text-text-primary p-2 rounded-full shadow-lg transition-all backdrop-blur-sm border border-ui-border/30"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -73,7 +73,7 @@ export default function ClipsCarousel() {
         {showRightButton && (
           <button
             onClick={scrollRight}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/80 hover:bg-black/90 text-white p-2 rounded-full shadow-lg transition-all backdrop-blur-sm border border-[#666666]/30"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-ui-background/80 hover:bg-ui-background/90 text-text-primary p-2 rounded-full shadow-lg transition-all backdrop-blur-sm border border-ui-border/30"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
@@ -86,50 +86,50 @@ export default function ClipsCarousel() {
         >
           {mockClips.map((clip) => (
             <div key={clip.id} className="flex-shrink-0 w-28 sm:w-32">
-              <div className="relative bg-[#333333]/80 rounded-xl overflow-hidden border border-[#666666]/30 hover:border-[#FF9C00]/50 transition-all cursor-pointer group">
+              <div className="relative bg-ui-surface-hover/80 rounded-xl overflow-hidden border border-ui-border/30 hover:border-brand-primary/50 transition-all cursor-pointer group">
                 {/* 9:16 Thumbnail Container */}
-                <div className="aspect-[9/16] bg-gradient-to-br from-[#1A1A1A] via-[#2A2A2A] to-[#333333] flex items-center justify-center relative overflow-hidden">
+                <div className="aspect-[9/16] bg-gradient-to-br from-ui-surface via-ui-surface-hover to-ui-surface-hover flex items-center justify-center relative overflow-hidden">
                   {/* Background Pattern */}
                   <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-2 left-2 w-4 h-4 bg-[#FF9C00] rounded-full"></div>
-                    <div className="absolute top-8 right-3 w-2 h-2 bg-[#AC3601] rounded-full"></div>
-                    <div className="absolute bottom-6 left-3 w-3 h-3 bg-[#FF9C00] rounded-full"></div>
-                    <div className="absolute bottom-12 right-2 w-2.5 h-2.5 bg-[#AC3601] rounded-full"></div>
+                    <div className="absolute top-2 left-2 w-4 h-4 bg-brand-primary rounded-full"></div>
+                    <div className="absolute top-8 right-3 w-2 h-2 bg-brand-secondary rounded-full"></div>
+                    <div className="absolute bottom-6 left-3 w-3 h-3 bg-brand-primary rounded-full"></div>
+                    <div className="absolute bottom-12 right-2 w-2.5 h-2.5 bg-brand-secondary rounded-full"></div>
                   </div>
                   
                   {/* Play Button */}
                   <div className="relative z-10 group-hover:scale-110 transition-transform duration-200">
-                    <Play className="h-8 w-8 text-[#FF9C00] opacity-80 drop-shadow-lg" />
+                    <Play className="h-8 w-8 text-brand-primary opacity-80 drop-shadow-lg" />
                   </div>
                   
                   {/* Game Badge */}
-                  <div className="absolute top-2 left-2 bg-black/80 text-[#FF9C00] text-xs px-2 py-1 rounded-md font-medium backdrop-blur-sm">
+                  <div className="absolute top-2 left-2 bg-ui-background/80 text-brand-primary text-xs px-2 py-1 rounded-md font-medium backdrop-blur-sm">
                     {clip.game}
                   </div>
                   
                   {/* Duration */}
-                  <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm">
+                  <div className="absolute bottom-2 right-2 bg-ui-background/80 text-text-primary text-xs px-2 py-1 rounded-md backdrop-blur-sm">
                     {clip.duration}
                   </div>
                   
                   {/* Views */}
-                  <div className="absolute bottom-2 left-2 bg-black/80 text-white text-xs px-1.5 py-1 rounded-md backdrop-blur-sm">
+                  <div className="absolute bottom-2 left-2 bg-ui-background/80 text-text-primary text-xs px-1.5 py-1 rounded-md backdrop-blur-sm">
                     {clip.views}
                   </div>
 
                   {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-[#FF9C00]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                  <div className="absolute inset-0 bg-brand-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                 </div>
                 
                 {/* User Info */}
                 <div className="p-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-gradient-to-br from-[#FF9C00] to-[#AC3601] rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-white">
+                    <div className="w-6 h-6 bg-brand-gradient rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-text-primary">
                         {clip.username.charAt(0)}
                       </span>
                     </div>
-                    <span className="text-xs text-[#CCCCCC] font-medium truncate">
+                    <span className="text-xs text-text-secondary font-medium truncate">
                       {clip.username}
                     </span>
                   </div>
